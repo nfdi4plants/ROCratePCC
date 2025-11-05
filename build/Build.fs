@@ -21,7 +21,7 @@ open ReleaseTasks
 let _release = 
     BuildTask.createEmpty 
         "Release" 
-        [clean; build; runTests; pack; createTag; publishNuget; publishNPM; publishPyPi]
+        [clean; build; runTests; pack; createTag; publishNuget;(* publishNPM; publishPyPi*)]
 
 
 ReleaseNotesTasks.updateReleaseNotes |> ignore

@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <PackageTags>ARC;F#;FSharp;dotnet;.Net;bioinformatics;biology;fable-library;datascience;dataplant;nfdi;metadata;fable-dotnet</PackageTags>
+    <PackageTags>RO-Crate;Profile;F#;FSharp;dotnet;.Net;bioinformatics;biology;fable-library;datascience;dataplant;nfdi;metadata;fable-dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <Import Project="../Package.Metadata.props" />
   
   <Import Project="ROCratePCC.Common.props" />
 
   <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="\"/>
     <None Include="index.ts" />
     <None Include="rocrate.py" />
     <None Include="__init__.py" />

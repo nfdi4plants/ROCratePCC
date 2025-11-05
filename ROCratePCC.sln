@@ -18,6 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		package.json = package.json
 		pyproject.toml = pyproject.toml
 		README.md = README.md
+		RELEASE_NOTES.md = RELEASE_NOTES.md
 		setup.cmd = setup.cmd
 		tsconfig.json = tsconfig.json
 		vite.config.mts = vite.config.mts
