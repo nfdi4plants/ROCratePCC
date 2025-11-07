@@ -5,14 +5,20 @@ open ARCtrl.ROCrate
 open ARCtrl.Json
 open Fable.Core
 
+/// object id * url to role
+[<AttachMembers>]
+type CustomResourceDescriptor(id : string, role : string) =
 
+    member this.Id = id
+    member this.Role = role
+
+[<Erase>]
 type ResourceDescriptorType =
     | Specification
     | Constraint
     | Guidance
-    | Example
-    // object id * url to role
-    | Other of string*string
+    | Example 
+    | Other of CustomResourceDescriptor
 
     with
 
@@ -22,7 +28,7 @@ type ResourceDescriptorType =
         | Constraint -> "#hasConstraint"
         | Guidance -> "#hasGuidance"
         | Example -> "#hasExample"
-        | Other(id, _) -> id
+        | Other(crd) -> crd.Id
 
     member this.Role =
         match this with
@@ -30,7 +36,7 @@ type ResourceDescriptorType =
         | Constraint -> "http://www.w3.org/ns/dx/prof/role/constraints"
         | Guidance -> "http://www.w3.org/ns/dx/prof/role/guidance"
         | Example -> "http://www.w3.org/ns/dx/prof/role/example"
-        | Other(_, role) -> role
+        | Other(crd) -> crd.Role
 
 [<AttachMembers>]
 type Author(orcid : string, name : string) as n =

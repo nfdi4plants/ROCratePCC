@@ -9,9 +9,8 @@
   <Import Project="ROCratePCC.Common.props" />
 
   <ItemGroup>
-    <None Include="../../README.md" Pack="true" PackagePath="\"/>
+    <None Include="../../README.md" Pack="true" PackagePath="\" />
     <None Include="index.ts" />
-    <None Include="rocrate.py" />
     <None Include="__init__.py" />
     <Content Include="ROCratePCC.Common.props" Pack="true" PackagePath="fable/" />
   </ItemGroup>
