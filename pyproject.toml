@@ -1,6 +1,6 @@
 [project]
-name = "ROCratePCC"
-version = "3.0.0b11"
+name = "rocratepcc"
+version = "0.0.2"
 description = "Polyglot library (.NET, Python, Javascript) for creation of RO-Crate Profile Crates."
 authors = [
     { name = "Heinrich Lukas Weil", email = "weil@rptu.de" },
