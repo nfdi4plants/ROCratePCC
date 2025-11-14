@@ -39,11 +39,27 @@ type ResourceDescriptorType =
         | Other(crd) -> crd.Role
 
 [<AttachMembers>]
-type Author(orcid : string, name : string) as n =
+type Organization(name : string, ?url : string, ?address : string, ?department : Organization, ?orcid) as n =
+
+    inherit LDNode(id = $"https://orcid.org/{orcid}", schemaType = ResizeArray [LDOrganization.schemaType])
+    do
+        LDDataset.setNameAsString(n, name)
+        if url.IsSome then LDDataset.setUrlAsString(n, url.Value)
+        if address.IsSome then n.SetProperty("http://schema.org/address", address.Value)
+        if department.IsSome then n.SetProperty("http://schema.org/department", department.Value)
+
+[<AttachMembers>]
+type Author(orcid : string, ?name : string, ?givenName : string, ?familyName : string, ?email : string, ?affiliation : Organization) as n =
 
     inherit LDNode(id = $"https://orcid.org/{orcid}", schemaType = ResizeArray [LDPerson.schemaType])
 
-    do LDDataset.setNameAsString(n, name)
+    do
+        if name.IsSome then LDDataset.setNameAsString(n, name.Value)
+        if affiliation.IsSome then LDPerson.setAffiliation(n, affiliation.Value)
+        if givenName.IsSome then LDPerson.setGivenNameAsString(n, givenName.Value)
+        if familyName.IsSome then LDPerson.setFamilyNameAsString(n, familyName.Value)
+        if email.IsSome then LDPerson.setEmailAsString(n, email.Value)
+    
 
 [<AttachMembers>]
 type UsedType(iri : string, name : string) as n =
@@ -94,7 +110,7 @@ type Example(textualResources : ResizeArray<TextualResource>) =
     inherit ResourceDescriptor(textualResources = textualResources, resourceDescriptorType = ResourceDescriptorType.Example)
 
 [<AttachMembers>]
-type RootDataEntity(id : string, name : string, description : string, license: License, usedTypes : ResizeArray<UsedType>, resourceDescriptors : ResizeArray<ResourceDescriptor>, authors : ResizeArray<Author>) as n =
+type RootDataEntity(id : string, name : string, description : string, license: License, usedTypes : ResizeArray<UsedType>, resourceDescriptors : ResizeArray<ResourceDescriptor>, authors : ResizeArray<Author>, ?dataPublished : System.DateTime, ?publisher : Organization) as n =
     inherit LDNode(id = id, schemaType = ResizeArray [LDDataset.schemaType; "http://www.w3.org/ns/dx/prof/Profile"])
     do
         let textualResources : ResizeArray<LDNode> =
@@ -109,6 +125,12 @@ type RootDataEntity(id : string, name : string, description : string, license: L
         n.SetProperty("http://schema.org/author", authors)
         LDDataset.setHasParts(n, ResizeArray hasParts)
         n.SetProperty("http://www.w3.org/ns/dx/prof/hasResource", resourceDescriptors)
+        if dataPublished.IsSome then
+            LDDataset.setDatePublishedAsDateTime(n, dataPublished.Value)
+        else
+            LDDataset.setDatePublishedAsDateTime(n, System.DateTime.UtcNow)
+        if publisher.IsSome then
+            n.SetProperty("http://schema.org/publisher", publisher.Value)
 
 [<AttachMembers>]
 type Profile(rootDataEntity : RootDataEntity, ?license : License, ?roCrateSpec : string) as n =
