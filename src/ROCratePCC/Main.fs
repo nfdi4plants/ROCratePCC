@@ -40,8 +40,8 @@ type ResourceDescriptorType =
 
 [<AttachMembers>]
 type Organization(name : string, ?url : string, ?address : string, ?department : Organization, ?orcid) as n =
-
-    inherit LDNode(id = $"https://orcid.org/{orcid}", schemaType = ResizeArray [LDOrganization.schemaType])
+    
+    inherit LDNode(id = (if url.IsSome then url.Value else $"#{name}"), schemaType = ResizeArray [LDOrganization.schemaType])
     do
         LDDataset.setNameAsString(n, name)
         if url.IsSome then LDDataset.setUrlAsString(n, url.Value)
