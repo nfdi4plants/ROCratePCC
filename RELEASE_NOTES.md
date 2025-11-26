@@ -1,3 +1,7 @@
+### 0.1.1+22df0f1 (Released 2025-11-26)
+* Bugfixes:
+    * [[#22df0f1](https://github.com/nfdi4plants/ROCratePCC/commit/22df0f1880ca02ca370af1334637dea33dd7f1e4)] small fix to `@id` of organization
+
 ### 0.1.0+68a2230 (Released 2025-11-26)
 * Additions:
     * [[#193d409](https://github.com/nfdi4plants/ROCratePCC/commit/193d409ae6ed2aa22182e1064ab512c0bcabf4ce)] update readme.md with python docs
