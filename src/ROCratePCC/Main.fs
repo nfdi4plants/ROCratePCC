@@ -62,11 +62,13 @@ type Author(orcid : string, ?name : string, ?givenName : string, ?familyName : s
     
 
 [<AttachMembers>]
-type UsedType(iri : string, name : string) as n =
+type UsedType(iri : string, name : string, ?termCode) as n =
 
     inherit LDNode(id = iri, schemaType = ResizeArray [LDDefinedTerm.schemaType])
 
-    do LDDataset.setNameAsString(n, name)
+    do
+        LDDataset.setNameAsString(n, name)
+        if termCode.IsSome then n.SetProperty("https://schema.org/termCode", termCode.Value)
 
 [<AttachMembers>]
 type License(iri : string, name : string) as n =
@@ -110,21 +112,25 @@ type Example(textualResources : ResizeArray<TextualResource>) =
     inherit ResourceDescriptor(textualResources = textualResources, resourceDescriptorType = ResourceDescriptorType.Example)
 
 [<AttachMembers>]
-type RootDataEntity(id : string, name : string, description : string, license: License, usedTypes : ResizeArray<UsedType>, resourceDescriptors : ResizeArray<ResourceDescriptor>, authors : ResizeArray<Author>, ?dataPublished : System.DateTime, ?publisher : Organization) as n =
+type RootDataEntity(id : string, name : string, description : string, license: License, authors : ResizeArray<Author>, ?version : string, ?keywords : ResizeArray<string>, ?usedTypes : ResizeArray<UsedType>, ?resourceDescriptors : ResizeArray<ResourceDescriptor>, ?dataPublished : System.DateTime, ?publisher : Organization) as n =
     inherit LDNode(id = id, schemaType = ResizeArray [LDDataset.schemaType; "http://www.w3.org/ns/dx/prof/Profile"])
     do
         let textualResources : ResizeArray<LDNode> =
             ResizeArray [
-                for rd in resourceDescriptors do
+                for rd in resourceDescriptors |> Option.defaultValue (ResizeArray()) do
                     yield! rd.GetPropertyNodes("http://www.w3.org/ns/dx/prof/hasArtifact")
             ]
-        let hasParts : List<LDNode> = [for tr in textualResources do tr; for ut in usedTypes do ut]
+        let hasParts : List<LDNode> =
+            [for tr in textualResources do tr; for ut in usedTypes |> Option.defaultValue (ResizeArray()) do ut]
+            |> List.distinct
         LDDataset.setLicenseAsCreativeWork(n, license)
         LDDataset.setNameAsString(n, name)
         LDDataset.setDescriptionAsString(n, description)
         n.SetProperty("http://schema.org/author", authors)
-        LDDataset.setHasParts(n, ResizeArray hasParts)
-        n.SetProperty("http://www.w3.org/ns/dx/prof/hasResource", resourceDescriptors)
+        if keywords.IsSome then n.SetProperty("http://schema.org/keywords", keywords.Value)
+        if version.IsSome then LDLabProtocol.setVersionAsString(n, version.Value)
+        if hasParts.Length > 0 then LDDataset.setHasParts(n, ResizeArray hasParts)
+        if resourceDescriptors.IsSome then n.SetProperty("http://www.w3.org/ns/dx/prof/hasResource", resourceDescriptors.Value)
         if dataPublished.IsSome then
             LDDataset.setDatePublishedAsDateTime(n, dataPublished.Value)
         else
@@ -139,10 +145,11 @@ type Profile(rootDataEntity : RootDataEntity, ?license : License, ?roCrateSpec :
         LDDataset.setAbouts(n, ResizeArray [rootDataEntity :> LDNode])
         if license.IsSome then LDDataset.setLicenseAsCreativeWork(n, license.Value)
         let roCrateSpec = Option.defaultValue "https://w3id.org/ro/crate/1.2" roCrateSpec
+        rootDataEntity.SetProperty("http://www.w3.org/ns/dx/prof/isProfileOf", roCrateSpec)
         n.SetProperty("http://purl.org/dc/terms/conformsTo", roCrateSpec)
 
     member this.ToROCrateJsonString(?spaces : int) =
-        let context = Context.initV1_2DRAFT()
+        let context = Context.initV1_2()
         this.Compact_InPlace(context, false)
         let graph = this.Flatten()
         graph.SetContext(context)
