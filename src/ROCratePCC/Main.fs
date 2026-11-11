@@ -144,7 +144,9 @@ type Profile(rootDataEntity : RootDataEntity, ?license : License, ?roCrateSpec :
     do
         LDDataset.setAbouts(n, ResizeArray [rootDataEntity :> LDNode])
         if license.IsSome then LDDataset.setLicenseAsCreativeWork(n, license.Value)
-        let roCrateSpec = Option.defaultValue "https://w3id.org/ro/crate/1.2" roCrateSpec
+        let roCrateSpec =
+            Option.defaultValue "https://w3id.org/ro/crate/1.2" roCrateSpec
+            |> LDRef
         rootDataEntity.SetProperty("http://www.w3.org/ns/dx/prof/isProfileOf", roCrateSpec)
         n.SetProperty("http://purl.org/dc/terms/conformsTo", roCrateSpec)
 
