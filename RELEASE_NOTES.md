@@ -1,3 +1,8 @@
+
+### 0.2.0+bd445f6 (Released 2026-11-11)
+* Additions:
+    * [[#bd445f6](https://github.com/nfdi4plants/ROCratePCC/commit/bd445f63c9e724204589f4437e22c25877d47f5f)] pack conformsTo and isProfileOf as object references
+
 ### 0.1.1+22df0f1 (Released 2025-11-26)
 * Bugfixes:
     * [[#22df0f1](https://github.com/nfdi4plants/ROCratePCC/commit/22df0f1880ca02ca370af1334637dea33dd7f1e4)] small fix to `@id` of organization
