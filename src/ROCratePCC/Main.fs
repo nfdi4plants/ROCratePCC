@@ -17,7 +17,8 @@ type ResourceDescriptorType =
     | Specification
     | Constraint
     | Guidance
-    | Example 
+    | Example
+    | ConformsTo
     | Other of CustomResourceDescriptor
 
     with
@@ -28,6 +29,7 @@ type ResourceDescriptorType =
         | Constraint -> "#hasConstraint"
         | Guidance -> "#hasGuidance"
         | Example -> "#hasExample"
+        | ConformsTo -> "#shouldConformTo"
         | Other(crd) -> crd.Id
 
     member this.Role =
@@ -36,6 +38,7 @@ type ResourceDescriptorType =
         | Constraint -> "http://www.w3.org/ns/dx/prof/role/constraints"
         | Guidance -> "http://www.w3.org/ns/dx/prof/role/guidance"
         | Example -> "http://www.w3.org/ns/dx/prof/role/example"
+        | ConformsTo -> "http://purl.org/dc/terms/conformsTo"
         | Other(crd) -> crd.Role
 
 [<AttachMembers>]
@@ -113,6 +116,26 @@ type Guidance(textualResources : ResizeArray<TextualResource>, ?id : string) =
 [<AttachMembers>]
 type Example(textualResources : ResizeArray<TextualResource>, ?id : string) =
     inherit ResourceDescriptor(textualResources = textualResources, resourceDescriptorType = ResourceDescriptorType.Example, ?id = id)
+
+/// Another profile that this profile relates to, e.g. a profile it builds on.
+///
+/// Only describes the other profile by `iri`, `name` and `version`. Further details belong to the Profile Crate of that profile.
+[<AttachMembers>]
+type RelatedProfile(iri : string, name : string, ?version : string) as n =
+    inherit LDNode(id = iri, schemaType = ResizeArray [LDCreativeWork.schemaType; "http://www.w3.org/ns/dx/prof/Profile"])
+    do
+        LDDataset.setNameAsString(n, name)
+        if version.IsSome then LDLabProtocol.setVersionAsString(n, version.Value)
+
+/// States that crates of this profile should also conform to the given related profile.
+///
+/// The `id` is optional and defaults to `#shouldConformTo_` followed by the id of the related profile (e.g. `#shouldConformTo_https://w3id.org/ro/wfrun/process/0.4`).
+[<AttachMembers>]
+type ConformsTo(profile : RelatedProfile, ?id : string) as n =
+    inherit ResourceDescriptor(textualResources = ResizeArray(), resourceDescriptorType = ResourceDescriptorType.ConformsTo, id = defaultArg id $"{ResourceDescriptorType.ConformsTo.ID}_{profile.Id}")
+    do
+        // The artifact of this descriptor is a profile instead of a file, so it replaces the empty list of textual resources.
+        n.SetProperty("http://www.w3.org/ns/dx/prof/hasArtifact", ResizeArray [profile :> LDNode])
 
 module internal ResourceDescriptors =
 

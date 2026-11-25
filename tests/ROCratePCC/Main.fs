@@ -123,10 +123,100 @@ let tests_ResourceDescriptorIds =
             Expect.isFalse (json.Contains "\"#hasExample\"") "merged example"
     ]
 
-let all = 
+module RelatedProfileHelper =
+
+    let hasPart = "http://schema.org/hasPart"
+    let hasRole = "http://www.w3.org/ns/dx/prof/hasRole"
+
+    let processRunCrate () =
+        RelatedProfile(iri = "https://w3id.org/ro/wfrun/process/0.4", name = "Process Run Crate profile", version = "0.4.0")
+
+    let workflowROCrate () =
+        RelatedProfile(iri = "https://w3id.org/workflowhub/workflow-ro-crate/1.0", name = "Workflow RO-Crate profile", version = "1.0")
+
+open RelatedProfileHelper
+
+let tests_RelatedProfiles =
+    testList "RelatedProfiles" [
+        testCase "RelatedProfile_Entity" <| fun _ ->
+            let profile = processRunCrate ()
+            Expect.equal profile.Id "https://w3id.org/ro/wfrun/process/0.4" "id"
+            Expect.sequenceEqual profile.SchemaType ["http://schema.org/CreativeWork"; "http://www.w3.org/ns/dx/prof/Profile"] "types"
+            Expect.equal (profile.TryGetPropertyAsSingleton("http://schema.org/name")) (Some (box "Process Run Crate profile")) "name"
+            Expect.equal (profile.TryGetPropertyAsSingleton("http://schema.org/version")) (Some (box "0.4.0")) "version"
+        testCase "RelatedProfile_VersionIsOptional" <| fun _ ->
+            let profile = RelatedProfile(iri = "https://w3id.org/ro/wfrun/process/0.4", name = "Process Run Crate profile")
+            Expect.isNone (profile.TryGetPropertyAsSingleton("http://schema.org/version")) "version"
+        testCase "ConformsTo_Descriptor" <| fun _ ->
+            let descriptor = ConformsTo(processRunCrate ())
+            Expect.isTrue (descriptor.HasType("http://www.w3.org/ns/dx/prof/ResourceDescriptor")) "type"
+            let role = descriptor.TryGetPropertyAsSingleton(hasRole)
+            Expect.equal role (Some (box (LDRef("http://purl.org/dc/terms/conformsTo")))) "role"
+            Expect.sequenceEqual (descriptor.GetPropertyNodes(hasArtifact) |> ids) ["https://w3id.org/ro/wfrun/process/0.4"] "artifact"
+            Expect.sequenceEqual (descriptor.GetPropertyNames() |> Seq.sort) [hasArtifact; hasRole] "no further properties"
+        testCase "ConformsTo_DefaultIdFromProfileId" <| fun _ ->
+            Expect.equal (ConformsTo(processRunCrate ()).Id) "#shouldConformTo_https://w3id.org/ro/wfrun/process/0.4" "process run crate"
+            Expect.equal (ConformsTo(workflowROCrate ()).Id) "#shouldConformTo_https://w3id.org/workflowhub/workflow-ro-crate/1.0" "workflow ro-crate"
+        testCase "ConformsTo_ExplicitId" <| fun _ ->
+            Expect.equal (ConformsTo(processRunCrate (), id = "#shouldConformToProcess").Id) "#shouldConformToProcess" "id"
+        testCase "RootDataEntity_ListsProfilesAsParts" <| fun _ ->
+            let root =
+                rootDataEntity [
+                    Specification(textualResources ["spec.md"])
+                    ConformsTo(workflowROCrate ())
+                    ConformsTo(processRunCrate ())
+                ]
+            Expect.sequenceEqual
+                (descriptorIds root)
+                ["#hasSpecification"; "#shouldConformTo_https://w3id.org/workflowhub/workflow-ro-crate/1.0"; "#shouldConformTo_https://w3id.org/ro/wfrun/process/0.4"]
+                "descriptors"
+            Expect.sequenceEqual
+                (root.GetPropertyNodes(hasPart) |> ids)
+                ["spec.md"; "https://w3id.org/workflowhub/workflow-ro-crate/1.0"; "https://w3id.org/ro/wfrun/process/0.4"]
+                "parts"
+        testCase "RootDataEntity_SameProfileNameStaysSeparate" <| fun _ ->
+            let root =
+                rootDataEntity [
+                    ConformsTo(RelatedProfile(iri = "https://example.org/profile/1.0", name = "Example profile", version = "1.0"))
+                    ConformsTo(RelatedProfile(iri = "https://example.org/profile/2.0", name = "Example profile", version = "2.0"))
+                ]
+            let descriptors = root.GetPropertyNodes(hasResource)
+            Expect.sequenceEqual (ids descriptors) ["#shouldConformTo_https://example.org/profile/1.0"; "#shouldConformTo_https://example.org/profile/2.0"] "ids"
+            Expect.sequenceEqual (descriptors.[0].GetPropertyNodes(hasArtifact) |> ids) ["https://example.org/profile/1.0"] "artifact of first descriptor"
+            Expect.sequenceEqual (descriptors.[1].GetPropertyNodes(hasArtifact) |> ids) ["https://example.org/profile/2.0"] "artifact of second descriptor"
+        testCase "FlattenedCrate_ReferencesProfiles" <| fun _ ->
+            let root =
+                rootDataEntity [
+                    Specification(textualResources ["spec.md"])
+                    ConformsTo(processRunCrate ())
+                ]
+            let graph = root.Flatten()
+            let profile = graph.GetNode("https://w3id.org/ro/wfrun/process/0.4")
+            Expect.isTrue (profile.HasType("http://schema.org/CreativeWork")) "profile is a creative work"
+            Expect.isTrue (profile.HasType("http://www.w3.org/ns/dx/prof/Profile")) "profile is a profile"
+            let descriptor = graph.GetNode("#shouldConformTo_https://w3id.org/ro/wfrun/process/0.4")
+            Expect.sequenceEqual (descriptor.GetPropertyNodes(hasArtifact, graph = graph) |> ids) ["https://w3id.org/ro/wfrun/process/0.4"] "artifact of the descriptor"
+            let rootNode = graph.GetNode("./")
+            Expect.sequenceEqual (rootNode.GetPropertyNodes(hasPart, graph = graph) |> ids) ["spec.md"; "https://w3id.org/ro/wfrun/process/0.4"] "parts of the root data entity"
+            Expect.sequenceEqual (rootNode.GetPropertyNodes(hasResource, graph = graph) |> ids) ["#hasSpecification"; "#shouldConformTo_https://w3id.org/ro/wfrun/process/0.4"] "resources of the root data entity"
+        testCase "Json_ContainsProfileAndDescriptor" <| fun _ ->
+            let root =
+                rootDataEntity [
+                    Specification(textualResources ["spec.md"])
+                    ConformsTo(processRunCrate ())
+                ]
+            let json = Profile(root).ToROCrateJsonString()
+            Expect.isTrue (json.Contains "\"#shouldConformTo_https://w3id.org/ro/wfrun/process/0.4\"") "descriptor"
+            Expect.isTrue (json.Contains "\"http://purl.org/dc/terms/conformsTo\"") "role"
+            Expect.isTrue (json.Contains "\"Process Run Crate profile\"") "name of the profile"
+            Expect.isTrue (json.Contains "\"0.4.0\"") "version of the profile"
+    ]
+
+let all =
     testList "ArcROCrateConversion" [
         tests_PlaceHolder
         tests_ResourceDescriptorIds
+        tests_RelatedProfiles
     ]
 
 #if !TESTS_ALL

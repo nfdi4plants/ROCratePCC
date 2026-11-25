@@ -266,6 +266,58 @@ Each example then gets its own entity in the `ro-crate-metadata.json`:
 
 The `id` is optional. Without it, a resource descriptor uses the id of its type (e.g. `#hasExample`). Resource descriptors that would end up with the same id are numbered instead (`#hasExample_1`, `#hasExample_2`).
 
+### Related profiles
+
+A profile can build on other profiles, so that crates of this profile should conform to those profiles as well (see [Multiple profiles](https://www.researchobject.org/ro-crate/specification/1.2/profiles.html#multiple-profiles) in the RO-Crate specification). Describe each of them as a `RelatedProfile` and add it to the resource descriptors with `ConformsTo`:
+
+```python
+process_run_crate = RelatedProfile(
+    iri = "https://w3id.org/ro/wfrun/process/0.4",
+    name = "Process Run Crate profile",
+    version = "0.4.0"
+)
+
+workflow_ro_crate = RelatedProfile(
+    iri = "https://w3id.org/workflowhub/workflow-ro-crate/1.0",
+    name = "Workflow RO-Crate profile",
+    version = "1.0"
+)
+
+resourceDescriptors = [
+    Specification(specifications),
+    ConformsTo(process_run_crate),
+    ConformsTo(workflow_ro_crate, id = "#shouldConformToWorkflowROCrate")
+]
+```
+
+Each related profile is written to the `ro-crate-metadata.json`, together with a resource descriptor that points to it:
+
+```json
+{
+  "@id": "https://w3id.org/ro/wfrun/process/0.4",
+  "@type": [
+    "CreativeWork",
+    "Profile"
+  ],
+  "name": "Process Run Crate profile",
+  "version": "0.4.0"
+},
+{
+  "@id": "#shouldConformTo_https://w3id.org/ro/wfrun/process/0.4",
+  "@type": "ResourceDescriptor",
+  "hasRole": {
+    "@id": "http://purl.org/dc/terms/conformsTo"
+  },
+  "hasArtifact": {
+    "@id": "https://w3id.org/ro/wfrun/process/0.4"
+  }
+}
+```
+
+The related profiles are also listed in the `hasPart` of the root data entity.
+
+The `id` is optional. Without it, the id is `#shouldConformTo_` followed by the `iri` of the related profile. The `version` of a `RelatedProfile` is optional as well.
+
 ### Additional properties
 
 Every entity (`RootDataEntity`, `TextualResource`, `Author`, ...) can be given properties that have no parameter of their own. Set them with `SetProperty`, using the full IRI of the property:
