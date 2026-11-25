@@ -266,6 +266,99 @@ Each example then gets its own entity in the `ro-crate-metadata.json`:
 
 The `id` is optional. Without it, a resource descriptor uses the id of its type (e.g. `#hasExample`). Resource descriptors that would end up with the same id are numbered instead (`#hasExample_1`, `#hasExample_2`).
 
+### Additional properties
+
+Every entity (`RootDataEntity`, `TextualResource`, `Author`, ...) can be given properties that have no parameter of their own. Set them with `SetProperty`, using the full IRI of the property:
+
+```python
+from rocratepcc.py.fable_modules.arctrl_rocrate.ldobject import LDRef
+
+example = TextualResource(
+    name = "Example crate",
+    file_path = "example/ro-crate-metadata.json",
+    encoding_format = "application/ld+json",
+    root_data_entity_id = id
+)
+
+# A single value
+example.SetProperty("http://schema.org/description", "A minimal crate that follows this profile")
+
+# A list of values
+example.SetProperty("http://schema.org/keywords", ["example", "minimal"])
+
+# A reference to another entity or to a web resource
+example.SetProperty("http://purl.org/dc/terms/conformsTo", LDRef(id))
+
+rootEntity.SetProperty("http://schema.org/identifier", "https://doi.org/10.5281/zenodo.1234567")
+```
+
+Properties that are part of the RO-Crate context are written with their short name:
+
+```json
+{
+  "@id": "example/ro-crate-metadata.json",
+  "@type": "File",
+  "name": "Example crate",
+  "encodingFormat": "application/ld+json",
+  "about": {
+    "@id": "https://github.com/nfdi4plants/isa-ro-crate-profile/tree/1.0.0-draft.2/profile"
+  },
+  "description": "A minimal crate that follows this profile",
+  "keywords": [
+    "example",
+    "minimal"
+  ],
+  "conformsTo": {
+    "@id": "https://github.com/nfdi4plants/isa-ro-crate-profile/tree/1.0.0-draft.2/profile"
+  }
+}
+```
+
+### Additional entities
+
+An entity the library has no class for can be created as an `LDNode` with an id and a list of types. Attach it to another entity with `SetProperty`:
+
+```python
+from rocratepcc.py.fable_modules.arctrl_rocrate.ldobject import LDNode
+
+grant = LDNode(id = "https://example.org/grants/1234", schema_type = ["http://schema.org/Grant"])
+grant.SetProperty("http://schema.org/name", "Example grant")
+
+rootEntity.SetProperty("http://schema.org/funding", grant)
+```
+
+The new entity is written to the `ro-crate-metadata.json` and referenced by its id:
+
+```json
+{
+  "@id": "https://example.org/grants/1234",
+  "@type": "Grant",
+  "name": "Example grant"
+},
+{
+  "@id": "https://github.com/nfdi4plants/isa-ro-crate-profile/tree/1.0.0-draft.2/profile",
+  ...
+  "funding": {
+    "@id": "https://example.org/grants/1234"
+  }
+}
+```
+
+An entity only ends up in the crate if it is attached to another entity.
+
+### More from ARCtrl
+
+`LDNode` and `LDRef` are part of [ARCtrl](https://github.com/nfdi4plants/ARCtrl), the library `rocratepcc` is built on. The package ships its own copy of ARCtrl in `rocratepcc.py.fable_modules`, and there is more in it worth a look. For example, `arctrl_rocrate.LDTypes` has helpers for common types:
+
+```python
+from rocratepcc.py.fable_modules.arctrl_rocrate.LDTypes.organization import LDOrganization
+
+funder = LDOrganization.create(name = "Example funder", id = "https://example.org/funder")
+grant.SetProperty("http://schema.org/funder", funder)
+```
+
+Always import from this copy. A separately installed `arctrl` package has classes of the same name, but `rocratepcc` does not recognise them.
+
 ## FSharp
 
 ```fsharp
