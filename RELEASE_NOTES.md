@@ -1,3 +1,8 @@
+### 0.3.0+10d7eba (Released 2026-11-25)
+* Additions:
+    * [[#10d7eba](https://github.com/nfdi4plants/ROCratePCC/commit/10d7eba62e4e3234057ae2e0778e9ba3214957e8)] add resourceDescriptors for related profiles #8
+    * [[#e89147c](https://github.com/nfdi4plants/ROCratePCC/commit/e89147c23f5b53317c75ad7a8a67c9d7117f3060)] add example for dynamic extension #3 #7
+    * [[#a3a4842](https://github.com/nfdi4plants/ROCratePCC/commit/a3a48420b04f4214f9c5094c85173679b2ee8395)] allow multiple resourcedescriptors of same type with different id #5
 
 ### 0.2.0+bd445f6 (Released 2026-11-11)
 * Additions:
