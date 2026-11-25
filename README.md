@@ -209,6 +209,63 @@ resulting in the following `ro-crate-metadata.json`:
 }
 ```
 
+### Multiple resource descriptors of the same type
+
+A profile can contain several resource descriptors of the same type, for example two separate examples. Give each of them its own `id` to tell them apart:
+
+```python
+example_genome = [
+    TextualResource(
+        name = "Genome example",
+        file_path = "examples/genome.json",
+        encoding_format = "application/ld+json",
+        root_data_entity_id = id
+    )
+]
+
+example_barcode = [
+    TextualResource(
+        name = "Barcode example",
+        file_path = "examples/barcode.json",
+        encoding_format = "application/ld+json",
+        root_data_entity_id = id
+    )
+]
+
+resourceDescriptors = [
+    Specification(specifications),
+    Example(example_genome, id = "#example-genome"),
+    Example(example_barcode, id = "#example-barcode")
+]
+```
+
+Each example then gets its own entity in the `ro-crate-metadata.json`:
+
+```json
+{
+  "@id": "#example-genome",
+  "@type": "ResourceDescriptor",
+  "hasRole": {
+    "@id": "http://www.w3.org/ns/dx/prof/role/example"
+  },
+  "hasArtifact": {
+    "@id": "examples/genome.json"
+  }
+},
+{
+  "@id": "#example-barcode",
+  "@type": "ResourceDescriptor",
+  "hasRole": {
+    "@id": "http://www.w3.org/ns/dx/prof/role/example"
+  },
+  "hasArtifact": {
+    "@id": "examples/barcode.json"
+  }
+}
+```
+
+The `id` is optional. Without it, a resource descriptor uses the id of its type (e.g. `#hasExample`). Resource descriptors that would end up with the same id are numbered instead (`#hasExample_1`, `#hasExample_2`).
+
 ## FSharp
 
 ```fsharp

@@ -86,9 +86,12 @@ type TextualResource(name : string, filePath : string, encodingFormat : string, 
         | Some id -> n.SetProperty(LDFile.about, LDRef(id = id))
         | None -> ()
 
+/// The `id` is optional and defaults to the id of the resource descriptor type (e.g. `#hasExample`).
+///
+/// Set it to tell several resource descriptors of the same type apart.
 [<AttachMembers>]
-type ResourceDescriptor(textualResources : ResizeArray<TextualResource>, resourceDescriptorType : ResourceDescriptorType) as n =
-    inherit LDNode(id = resourceDescriptorType.ID, schemaType = ResizeArray ["http://www.w3.org/ns/dx/prof/ResourceDescriptor"])
+type ResourceDescriptor(textualResources : ResizeArray<TextualResource>, resourceDescriptorType : ResourceDescriptorType, ?id : string) as n =
+    inherit LDNode(id = defaultArg id resourceDescriptorType.ID, schemaType = ResizeArray ["http://www.w3.org/ns/dx/prof/ResourceDescriptor"])
     do
         //let artifacts = textualResources |> Seq.map (fun tr -> LDRef(tr.Id)) |> ResizeArray
         //n.SetProperty("http://www.w3.org/ns/dx/prof/hasArtifact", artifacts)
@@ -96,25 +99,58 @@ type ResourceDescriptor(textualResources : ResizeArray<TextualResource>, resourc
         n.SetProperty("http://www.w3.org/ns/dx/prof/hasArtifact", textualResources)
 
 [<AttachMembers>]
-type Specification(textualResources : ResizeArray<TextualResource>) =
-    inherit ResourceDescriptor(textualResources = textualResources, resourceDescriptorType = ResourceDescriptorType.Specification)
+type Specification(textualResources : ResizeArray<TextualResource>, ?id : string) =
+    inherit ResourceDescriptor(textualResources = textualResources, resourceDescriptorType = ResourceDescriptorType.Specification, ?id = id)
 
 [<AttachMembers>]
-type Constraint(textualResources : ResizeArray<TextualResource>) =
-    inherit ResourceDescriptor(textualResources = textualResources, resourceDescriptorType = ResourceDescriptorType.Constraint)
+type Constraint(textualResources : ResizeArray<TextualResource>, ?id : string) =
+    inherit ResourceDescriptor(textualResources = textualResources, resourceDescriptorType = ResourceDescriptorType.Constraint, ?id = id)
 
 [<AttachMembers>]
-type Guidance(textualResources : ResizeArray<TextualResource>) =
-    inherit ResourceDescriptor(textualResources = textualResources, resourceDescriptorType = ResourceDescriptorType.Guidance)
+type Guidance(textualResources : ResizeArray<TextualResource>, ?id : string) =
+    inherit ResourceDescriptor(textualResources = textualResources, resourceDescriptorType = ResourceDescriptorType.Guidance, ?id = id)
 
 [<AttachMembers>]
-type Example(textualResources : ResizeArray<TextualResource>) =
-    inherit ResourceDescriptor(textualResources = textualResources, resourceDescriptorType = ResourceDescriptorType.Example)
+type Example(textualResources : ResizeArray<TextualResource>, ?id : string) =
+    inherit ResourceDescriptor(textualResources = textualResources, resourceDescriptorType = ResourceDescriptorType.Example, ?id = id)
+
+module internal ResourceDescriptors =
+
+    /// The id of a node is read-only, so a new id requires a copy of the node.
+    let private copyWithId (newId : string) (resourceDescriptor : ResourceDescriptor) : LDNode =
+        let copy = LDNode(id = newId, schemaType = ResizeArray resourceDescriptor.SchemaType)
+        for propertyName in resourceDescriptor.GetPropertyNames() do
+            match resourceDescriptor.TryGetProperty(propertyName) with
+            | Some value -> copy.SetProperty(propertyName, value)
+            | None -> ()
+        copy
+
+    /// Nodes sharing an id are merged into a single node when the crate is flattened.
+    ///
+    /// To keep them apart, resource descriptors with the same id are replaced by copies whose id carries a running number, e.g. `#hasExample_1` and `#hasExample_2`.
+    let withUniqueIds (resourceDescriptors : ResizeArray<ResourceDescriptor>) : ResizeArray<LDNode> =
+        let takenIds = resourceDescriptors |> Seq.map (fun rd -> rd.Id) |> ResizeArray
+        let isShared (id : string) = takenIds |> Seq.filter (fun takenId -> takenId = id) |> Seq.length > 1
+        let rec nextFreeId (id : string) (number : int) =
+            let candidate = $"{id}_{number}"
+            if takenIds.Contains candidate then
+                nextFreeId id (number + 1)
+            else
+                takenIds.Add candidate
+                candidate
+        let uniqueDescriptors = ResizeArray<LDNode>()
+        for rd in resourceDescriptors do
+            if isShared rd.Id then
+                uniqueDescriptors.Add(copyWithId (nextFreeId rd.Id 1) rd)
+            else
+                uniqueDescriptors.Add rd
+        uniqueDescriptors
 
 [<AttachMembers>]
 type RootDataEntity(id : string, name : string, description : string, license: License, authors : ResizeArray<Author>, ?version : string, ?keywords : ResizeArray<string>, ?usedTypes : ResizeArray<UsedType>, ?resourceDescriptors : ResizeArray<ResourceDescriptor>, ?dataPublished : System.DateTime, ?publisher : Organization) as n =
     inherit LDNode(id = id, schemaType = ResizeArray [LDDataset.schemaType; "http://www.w3.org/ns/dx/prof/Profile"])
     do
+        let resourceDescriptors = resourceDescriptors |> Option.map ResourceDescriptors.withUniqueIds
         let textualResources : ResizeArray<LDNode> =
             ResizeArray [
                 for rd in resourceDescriptors |> Option.defaultValue (ResizeArray()) do
