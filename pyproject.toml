@@ -6,14 +6,15 @@ authors = [
     { name = "Heinrich Lukas Weil", email = "weil@rptu.de" },
     { name = "Eli Chadwick", email = "eli.chadwick@manchester.ac.uk" },
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 readme = "README.md"
 keywords = [
     "ro-crate",
     "profile crate"
 ]
 dependencies = [
-    "arctrl>=3.0.0b11,<4",
+    "arctrl>=3.3.1,<4",
+    "fable-library==5.26.0",
 ]
 
 [project.urls]

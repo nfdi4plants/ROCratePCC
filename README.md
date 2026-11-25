@@ -476,12 +476,12 @@ System.IO.File.WriteAllText("profile/ro-crate-metadata.json", string)
 #### Requirements
 
 - [nodejs and npm](https://nodejs.org/en/download)
-    - verify with `node --version` (Tested with v18.16.1)
-    - verify with `npm --version` (Tested with v9.2.0)
+    - verify with `node --version` (Tested with v24.14.1, needs >=20)
+    - verify with `npm --version` (Tested with v11.11.0)
 - [.NET SDK](https://dotnet.microsoft.com/en-us/download)
-    - verify with `dotnet --version` (Tested with 7.0.306)
+    - verify with `dotnet --version` (Tested with 10.0.403, needs SDK 10)
 - [Python](https://www.python.org/downloads/)
-    - verify with `py --version` (Tested with 3.12.2, known to work only for >=3.11)
+    - verify with `py --version` (Tested with 3.12.4, needs >=3.12)
 
 #### Local Setup
 
