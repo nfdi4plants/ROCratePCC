@@ -1,3 +1,7 @@
+### 0.3.1+f1a71d9 (Released 2026-11-25)
+* Additions:
+    * [[#f1a71d9](https://github.com/nfdi4plants/ROCratePCC/commit/f1a71d9496a1357b7e1b56feca3788c68bcfe93c)] update ARCtrl to 3.3.1 #1
+    
 ### 0.3.0+10d7eba (Released 2026-11-25)
 * Additions:
     * [[#10d7eba](https://github.com/nfdi4plants/ROCratePCC/commit/10d7eba62e4e3234057ae2e0778e9ba3214957e8)] add resourceDescriptors for related profiles #8
